@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Profile
+from django.contrib.auth import authenticate
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -36,3 +37,14 @@ class ProfileSerializer(serializers.ModelSerializer):
         profile.save()
 
         return profile
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+    def validate(self, attrs):
+        user = authenticate(username=attrs['username'], password=attrs['password'])
+        if user is None:
+            raise serializers.ValidationError('Invalid credentials')
+        attrs['user'] = user
+        return attrs
