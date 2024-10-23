@@ -27,7 +27,7 @@ class LogoutView(APIView):
     def post(self, request):
         try:
             token = Token.objects.get(user=request.user)
-            token.delete()  # Delete the token
+            token.delete()
             return Response({'message': 'Successfully logged out.'}, status=status.HTTP_200_OK)
         except Token.DoesNotExist:
             return Response({'message': 'User is not logged in.'}, status=status.HTTP_400_BAD_REQUEST)
