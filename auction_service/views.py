@@ -36,7 +36,7 @@ class BidCreateView(APIView):
 
         serializer = BidSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(bidder=request.user.profile)  # Save the new bid with the authenticated user as bidder
+            serializer.save(bidder=request.user.profile)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -44,7 +44,6 @@ class BidCreateView(APIView):
 class LotListView(generics.ListAPIView):
     queryset = Lot.objects.all()
     serializer_class = LotListSerializer
-    pagination_class = PageNumberPagination
     permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
@@ -56,10 +55,7 @@ class LotListView(generics.ListAPIView):
 
         response = super().list(request, *args, **kwargs)
 
-        return Response({
-            'count': total_count,
-            'results': response.data
-        })
+        return Response(response.data)
 
 class LotDetailView(APIView):
     permission_classes = [IsAuthenticated]
