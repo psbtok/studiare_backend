@@ -1,6 +1,18 @@
 from rest_framework import serializers
 from .models import Lot, Bid
 
+class LotCreateSerializer(serializers.ModelSerializer):
+    seller = serializers.PrimaryKeyRelatedField(read_only=True) 
+
+    class Meta:
+        model = Lot
+        fields = ['seller', 'title', 'description', 'starting_price', 'is_reserve', 'reserve_price', 'start_datetime', 'end_datetime', 'image']
+
+    def validate(self, data):
+        if data['is_reserve'] and data['reserve_price'] <= data['starting_price']:
+            raise serializers.ValidationError("Reserve price must be greater than starting price.")
+        return data
+    
 class BidSerializer(serializers.ModelSerializer):
     bidder = serializers.PrimaryKeyRelatedField(read_only=True) 
 
@@ -14,9 +26,9 @@ class LotListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lot
-        fields = ['id', 'title', 'description', 'starting_price', 
-                  'is_reserve', 'reserve_price', 'start_datetime', 
-                  'end_datetime', 'seller', 'last_bid']
+        fields = ['id', 'title', 'starting_price', 
+                  'is_reserve', 'end_datetime', 
+                  'seller', 'last_bid']
 
     def get_last_bid(self, obj):
         last_bid = obj.bids.order_by('-id').first()

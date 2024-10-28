@@ -1,7 +1,7 @@
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import LotDetailSerializer, LotListSerializer, BidSerializer
+from .serializers import *
 from rest_framework.permissions import IsAuthenticated
 from .models import Lot
 from rest_framework.pagination import PageNumberPagination
@@ -11,7 +11,7 @@ class LotCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = LotListSerializer(data=request.data)
+        serializer = LotCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(seller=request.user.profile)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
