@@ -6,9 +6,10 @@ from django.contrib.auth import authenticate
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
+        fields = ['email', 'password']
 
     def create(self, validated_data):
+        validated_data['username'] = validated_data['email']
         user = User.objects.create_user(**validated_data) 
         return user
 
@@ -23,7 +24,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         user_data = validated_data.pop('user')
         
         user, created = User.objects.get_or_create(
-            username=user_data['username'], 
+            username=user_data['email'], 
             defaults={'email': user_data['email'], 'password': user_data['password']}
         )
         

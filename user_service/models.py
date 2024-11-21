@@ -9,10 +9,10 @@ class Profile(models.Model):
 
     class Meta:
         verbose_name = "Профиль пользователя"
-        verbose_name_plural = "Профиль пользователя"  
+        verbose_name_plural = "Профиль пользователя"
 
     def __str__(self):
-        return self.user.username
+        return self.user.email
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

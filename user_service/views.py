@@ -1,11 +1,10 @@
 from rest_framework import generics
 from .models import Profile
-from .serializers import ProfileSerializer
+from .serializers import ProfileSerializer, LoginSerializer
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
-from .serializers import LoginSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 class CreateProfileView(generics.CreateAPIView):
