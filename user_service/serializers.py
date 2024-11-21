@@ -6,12 +6,10 @@ from django.contrib.auth import authenticate
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'password']
-
-    def create(self, validated_data):
-        validated_data['username'] = validated_data['email']
-        user = User.objects.create_user(**validated_data) 
-        return user
+        fields = ['email', 'password', 'first_name', 'last_name']
+        extra_kwargs = {
+            'password': {'write_only': True},
+        }
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer()
@@ -25,15 +23,23 @@ class ProfileSerializer(serializers.ModelSerializer):
         
         user, created = User.objects.get_or_create(
             username=user_data['email'], 
-            defaults={'email': user_data['email'], 'password': user_data['password']}
+            defaults={
+                'email': user_data['email'], 
+                'password': user_data['password'],
+                'first_name': user_data.get('first_name', ''),
+                'last_name': user_data.get('last_name', '')
+            }
         )
         
         if created:
             user.set_password(user_data['password'])
             user.save()
-        
-        profile, created = Profile.objects.get_or_create(user=user)
+        else:
+            user.first_name = user_data.get('first_name', user.first_name)
+            user.last_name = user_data.get('last_name', user.last_name)
+            user.save()
 
+        profile, created = Profile.objects.get_or_create(user=user)
         profile.is_tutor = validated_data.get('is_tutor', profile.is_tutor)
         profile.save()
 
