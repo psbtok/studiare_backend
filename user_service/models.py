@@ -4,15 +4,22 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="Пользователь")
-    is_tutor = models.BooleanField(default=False, verbose_name="Репетитор")
+    user = models.OneToOneField(
+        User, 
+        on_delete=models.CASCADE, 
+        verbose_name="Пользователь"
+    )
+    is_tutor = models.BooleanField(
+        default=False, 
+        verbose_name="Репетитор"
+    )
 
     class Meta:
         verbose_name = "Профиль пользователя"
-        verbose_name_plural = "Профиль пользователя"
+        verbose_name_plural = "Профили пользователей"
 
     def __str__(self):
-        return self.user.email
+        return f"{self.user.first_name} {self.user.last_name} ({self.user.email})"
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

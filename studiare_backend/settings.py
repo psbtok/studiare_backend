@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'user_service',
+    'lesson_service',
     # 'auction_service',
 ]
 
