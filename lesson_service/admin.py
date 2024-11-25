@@ -13,6 +13,7 @@ class LessonAdmin(admin.ModelAdmin):
         'isConfirmed', 
         'isCancelled', 
         'isConducted',
+        'price'
     )
     list_filter = ('isConfirmed', 'isCancelled', 'isConducted', 'date_start', 'subject')
     search_fields = ('tutor__username', 'student__username', 'subject', 'notes')
@@ -27,7 +28,8 @@ class LessonAdmin(admin.ModelAdmin):
                 'subject', 
                 'date_start', 
                 'date_end', 
-                'notes'
+                'notes',
+                'price'
             ),
             'description': 'Основная информация о занятии',
         }),

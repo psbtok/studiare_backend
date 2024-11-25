@@ -20,6 +20,7 @@ class Lesson(models.Model):
     date_start = models.DateTimeField(blank=True, null=True, verbose_name='Время начала занятия')
     date_end = models.DateTimeField(blank=True, null=True, verbose_name='Время конца занятия')
     notes = models.TextField(blank=True, null=True, verbose_name='Заметки')
+    price = models.IntegerField(blank=True, null=True)
     
     isConfirmed = models.BooleanField(blank=True, null=True, verbose_name='Подтверждено')
     confirmationTime = models.DateTimeField(blank=True, null=True, verbose_name='Время подтверждения')
@@ -35,4 +36,6 @@ class Lesson(models.Model):
         ordering = ['-date_start']
 
     def __str__(self):
-        return f"{self.subject} ({self.date_start.strftime('%Y-%m-%d %H:%M')})"
+        if self.date_start:
+            return f"{self.subject} ({self.date_start.strftime('%Y-%m-%d %H:%M')})"
+        return f"{self.subject} (Дата не указана)"
