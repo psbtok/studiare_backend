@@ -8,7 +8,7 @@ class Tutor(models.Model):
     birth_date = models.DateField(blank=True, null=True, verbose_name='Дата рождения')
     education = models.TextField(blank=True, null=True, verbose_name='Образование')
     links = models.TextField(blank=True, null=True, verbose_name='Ссылки')
-    age = models.PositiveIntegerField(blank=True, null=True, verbose_name='Возраст')
+    experienceYears = models.PositiveIntegerField(blank=True, null=True, verbose_name='Лет опыта')
 
     class Meta:
         verbose_name = 'Репетитор'
