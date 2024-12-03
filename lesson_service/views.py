@@ -15,7 +15,7 @@ class LessonPagination(LimitOffsetPagination):
 
 class LessonFilter(django_filters.FilterSet):
     date_start_from = django_filters.DateTimeFilter(
-        field_name='date_start', 
+        field_name='date_end', 
         lookup_expr='gte', 
         label='Start from date'
     )

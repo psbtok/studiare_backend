@@ -17,8 +17,6 @@ class LessonAdmin(admin.ModelAdmin):
     )
     list_filter = ('isConfirmed', 'isCancelled', 'isConducted', 'date_start', 'subject')
     search_fields = ('tutor__username', 'student__username', 'subject', 'notes')
-    ordering = ('-date_start',)
-    readonly_fields = ('confirmationTime', 'cancellationTime')
 
     fieldsets = (
         (None, {
