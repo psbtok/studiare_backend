@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from user_service.models import User
 from django.utils.timezone import make_aware
 from datetime import datetime
+from django.db.models import Q
 
 class LessonPagination(LimitOffsetPagination):
     default_limit = 10
@@ -15,17 +16,22 @@ class LessonPagination(LimitOffsetPagination):
 
 class LessonFilter(django_filters.FilterSet):
     date_start_from = django_filters.DateTimeFilter(
-        field_name='date_end', 
+        field_name='date_start', 
         lookup_expr='gte', 
         label='Start from date'
     )
 
+    date_start_to = django_filters.DateTimeFilter(
+        field_name='date_start', 
+        lookup_expr='lt', 
+        label='End at date'
+    )
+
     class Meta:
         model = Lesson
-        fields = ['tutor', 'date_start_from', 'date_end', 'subject', 'isConfirmed']
+        fields = ['tutor', 'date_start_from', 'date_start_to', 'date_end', 'subject', 'isConfirmed']
 
 class LessonViewSet(viewsets.ModelViewSet):
-    queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = LessonPagination  
@@ -33,6 +39,25 @@ class LessonViewSet(viewsets.ModelViewSet):
     filterset_class = LessonFilter
     ordering_fields = ['date_start', 'date_end']
     ordering = ['-date_start']
+
+    def get_queryset(self):
+        """
+        Фильтрует список уроков, если передан userId.
+        Уроки, в которых текущий пользователь является студентом или преподавателем, будут возвращены.
+        """
+        user = self.request.user
+        user_id = self.request.query_params.get('userId')  # Получаем userId из параметров запроса
+        
+        # Если userId присутствует в запросе, фильтруем по этому пользователю
+        if user_id:
+            return Lesson.objects.filter(
+                Q(tutor_id=user_id) | Q(student_id=user_id)
+            )
+        
+        # Если userId не передан, возвращаем все уроки, связанные с текущим авторизованным пользователем
+        return Lesson.objects.filter(
+            Q(tutor=user) | Q(student=user)
+        )
 
     def perform_create(self, serializer):
         user = self.request.user
