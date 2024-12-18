@@ -8,4 +8,5 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     path('profile/edit/', EditProfileView.as_view(), name='edit-profile'),
     path('profile/get/', GetProfileByIdView.as_view(), name='get-profile'),
+    path('users/by-full-name/', GetUsersByFullNameView.as_view(), name='get-users-by-full-name'),
 ]

@@ -96,3 +96,28 @@ class GetProfileByIdView(APIView):
 
         serializer = ProfileSerializer(profile)
         return Response(serializer.data)
+
+class GetUsersByFullNameView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        full_name = request.query_params.get('full_name')
+        if not full_name:
+            return Response({'detail': 'Full name parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        name_parts = full_name.split(' ')
+        if len(name_parts) != 2:
+            return Response({'detail': 'Please provide both first and last name.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        first_name, last_name = name_parts
+        users = User.objects.filter(first_name__iexact=first_name, last_name__iexact=last_name)
+
+        if not users.exists():
+            users = User.objects.filter(first_name__iexact=last_name, last_name__iexact=first_name)
+
+        if not users.exists():
+            raise NotFound(detail="No users found with that name.")
+
+        user_data = [{"id": user.id, "first_name": user.first_name, "last_name": user.last_name} for user in users]
+
+        return Response(user_data, status=status.HTTP_200_OK)
