@@ -46,15 +46,13 @@ class LessonViewSet(viewsets.ModelViewSet):
         Уроки, в которых текущий пользователь является студентом или преподавателем, будут возвращены.
         """
         user = self.request.user
-        user_id = self.request.query_params.get('userId')  # Получаем userId из параметров запроса
+        user_id = self.request.query_params.get('userId') 
         
-        # Если userId присутствует в запросе, фильтруем по этому пользователю
         if user_id:
             return Lesson.objects.filter(
                 Q(tutor_id=user_id) | Q(student_id=user_id)
             )
         
-        # Если userId не передан, возвращаем все уроки, связанные с текущим авторизованным пользователем
         return Lesson.objects.filter(
             Q(tutor=user) | Q(student=user)
         )
@@ -64,3 +62,13 @@ class LessonViewSet(viewsets.ModelViewSet):
         student_id = self.request.data.get('student')
         student = get_object_or_404(User, pk=student_id)
         serializer.save(tutor=user, student=student)
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        student_id = self.request.data.get('studentId')
+        print(self.request.data.get('studentId'))
+        if student_id:
+            student = get_object_or_404(User, pk=student_id)
+            serializer.save(tutor=user, student=student)
+        else:
+            serializer.save()
