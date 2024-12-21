@@ -6,8 +6,6 @@ from .models import Lesson
 from .serializers import LessonSerializer
 from django.shortcuts import get_object_or_404
 from user_service.models import User
-from django.utils.timezone import make_aware
-from datetime import datetime
 from django.db.models import Q
 
 class LessonPagination(LimitOffsetPagination):
@@ -41,10 +39,6 @@ class LessonViewSet(viewsets.ModelViewSet):
     ordering = ['-date_start']
 
     def get_queryset(self):
-        """
-        Фильтрует список уроков, если передан userId.
-        Уроки, в которых текущий пользователь является студентом или преподавателем, будут возвращены.
-        """
         user = self.request.user
         user_id = self.request.query_params.get('userId') 
         
