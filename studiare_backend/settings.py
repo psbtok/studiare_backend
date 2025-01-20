@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'user_service',
     'lesson_service',
+    'payment_service'
     # 'auction_service',
 ]
 
