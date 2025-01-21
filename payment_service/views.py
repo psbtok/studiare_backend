@@ -5,6 +5,10 @@ from .services import PaymentService
 from .models import Balance, User
 from .serializers import TopUpSerializer, WithdrawSerializer, TransferSerializer
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
+from django.utils import timezone
+from .models import Transaction
+from datetime import timedelta
 
 
 @api_view(['POST'])
@@ -83,3 +87,28 @@ def get_user_balance(request):
         }, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_income(request):
+    """Get total transfer income for the current month where the user is the receiver"""
+    user = request.user
+
+    now = timezone.now()
+    first_day_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_day_of_month = (first_day_of_month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+
+    transactions = Transaction.objects.filter(
+        receiver=user,
+        type='transfer',
+        date_created__gte=first_day_of_month,
+        date_created__lte=last_day_of_month
+    )
+
+    total_income = transactions.aggregate(Sum('amount'))['amount__sum'] or 0
+    transaction_count = transactions.count()
+
+    return Response({
+        'total_income': total_income,
+        'transaction_count': transaction_count
+    }, status=status.HTTP_200_OK)
