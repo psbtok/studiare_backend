@@ -1,6 +1,26 @@
 from django.db import models
 from django.conf import settings
 
+class Subject(models.Model):
+    title = models.CharField(max_length=100, verbose_name='Название предмета')
+    notes = models.TextField(blank=True, null=True, verbose_name='Заметки')
+    price = models.IntegerField(blank=True, null=True, verbose_name='Цена')
+    colorId = models.IntegerField(blank=True, null=True, verbose_name='ID цвета')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='subjects',
+        verbose_name='Пользователь'
+    )
+
+    class Meta:
+        verbose_name = 'Предмет'
+        verbose_name_plural = 'Предметы'
+        ordering = ['title']
+
+    def __str__(self):
+        return self.title
+
 class Lesson(models.Model):
     tutor = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
@@ -16,7 +36,12 @@ class Lesson(models.Model):
         related_name='lessons_as_student', 
         verbose_name='Ученик'
     )
-    subject = models.CharField(max_length=100, verbose_name='Предмет')
+    subject = models.ForeignKey(
+        Subject,
+        on_delete=models.CASCADE,
+        related_name='lessons',
+        verbose_name='Предмет'
+    )
     date_start = models.DateTimeField(blank=True, null=True, verbose_name='Время начала занятия')
     date_end = models.DateTimeField(blank=True, null=True, verbose_name='Время конца занятия')
     notes = models.TextField(blank=True, null=True, verbose_name='Заметки')
@@ -37,5 +62,5 @@ class Lesson(models.Model):
 
     def __str__(self):
         if self.date_start:
-            return f"{self.subject} ({self.date_start.strftime('%Y-%m-%d %H:%M')})"
-        return f"{self.subject} (Дата не указана)"
+            return f"{self.subject.title} ({self.date_start.strftime('%Y-%m-%d %H:%M')})"
+        return f"{self.subject.title} (Дата не указана)"

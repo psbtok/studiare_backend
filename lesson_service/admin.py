@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Lesson
+from .models import Lesson, Subject  # Import the Subject model
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
@@ -16,7 +16,7 @@ class LessonAdmin(admin.ModelAdmin):
         'price'
     )
     list_filter = ('isConfirmed', 'isCancelled', 'isConducted', 'date_start', 'subject')
-    search_fields = ('tutor__username', 'student__username', 'subject', 'notes')
+    search_fields = ('tutor__username', 'student__username', 'subject__title', 'notes')  # Updated to search by subject title
 
     fieldsets = (
         (None, {
@@ -40,5 +40,30 @@ class LessonAdmin(admin.ModelAdmin):
                 'isConducted'
             ),
             'description': 'Информация о статусе занятия',
+        }),
+    )
+
+@admin.register(Subject) 
+class SubjectAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 
+        'title', 
+        'user', 
+        'price', 
+        'colorId'
+    )
+    list_filter = ('user',) 
+    search_fields = ('title', 'user__username') 
+
+    fieldsets = (
+        (None, {
+            'fields': (
+                'title', 
+                'user', 
+                'notes', 
+                'price', 
+                'colorId'
+            ),
+            'description': 'Основная информация о предмете',
         }),
     )

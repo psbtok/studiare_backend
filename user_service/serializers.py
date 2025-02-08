@@ -57,7 +57,6 @@ class ProfileSerializer(serializers.ModelSerializer):
         return profile
     
     def update(self, instance, validated_data):
-        print('update')
         user_data = validated_data.pop('user', None)
         if user_data:
             user = instance.user

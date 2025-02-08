@@ -2,8 +2,8 @@ from rest_framework import viewsets, permissions, filters, serializers
 from rest_framework.pagination import LimitOffsetPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as django_filters
-from .models import Lesson
-from .serializers import LessonSerializer
+from .models import Lesson, Subject
+from .serializers import LessonSerializer, SubjectSerializer
 from django.shortcuts import get_object_or_404
 from user_service.models import User
 from django.db.models import Q
@@ -11,6 +11,34 @@ from payment_service.services import PaymentService
 from django.core.exceptions import ValidationError  
 from django.utils import timezone
 from datetime import timedelta
+
+class SubjectFilter(django_filters.FilterSet):
+    title = django_filters.CharFilter(field_name='title', lookup_expr='icontains')
+    colorId = django_filters.NumberFilter(field_name='colorId')
+
+    class Meta:
+        model = Subject
+        fields = ['title', 'colorId']
+
+class SubjectPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
+
+class SubjectViewSet(viewsets.ModelViewSet):
+    queryset = Subject.objects.all()
+    serializer_class = SubjectSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = SubjectPagination
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = SubjectFilter
+    ordering_fields = ['title', 'colorId']
+    ordering = ['title']
+
+    def get_queryset(self):
+        return Subject.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class LessonPagination(LimitOffsetPagination):
     default_limit = 10
@@ -58,13 +86,17 @@ class LessonViewSet(viewsets.ModelViewSet):
         user = self.request.user
         student_id = self.request.data.get('student')
         student = get_object_or_404(User, pk=student_id)
-        serializer.save(tutor=user, student=student)
+        subject_id = self.request.data.get('subject')
+        print(subject_id)
+        subject = get_object_or_404(Subject, pk=subject_id)
+        serializer.save(tutor=user, student=student, subject=subject)
 
     def perform_update(self, serializer):
         instance = self.get_object()
         is_conducted = self.request.data.get('isConducted')
         action = self.request.data.get('action')
 
+        # Перевод занятия в статус проведенного
         if is_conducted and not instance.isConducted and action=='conduct':
             student = instance.student
             tutor = instance.tutor
@@ -75,6 +107,7 @@ class LessonViewSet(viewsets.ModelViewSet):
             except Exception as e:
                 raise ValidationError(f"Failed to transfer funds: {str(e)}")
             
+        # Отмена занятия. При поздней отмене списываются средства
         elif (action == 'cancel' and 
             not instance.isConducted and 
             not instance.isCancelled and
