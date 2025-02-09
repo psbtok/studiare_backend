@@ -49,7 +49,6 @@ class SubjectAdmin(admin.ModelAdmin):
         'id', 
         'title', 
         'user', 
-        'price', 
         'colorId'
     )
     list_filter = ('user',) 
@@ -61,7 +60,6 @@ class SubjectAdmin(admin.ModelAdmin):
                 'title', 
                 'user', 
                 'notes', 
-                'price', 
                 'colorId'
             ),
             'description': 'Основная информация о предмете',

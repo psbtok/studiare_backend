@@ -4,7 +4,6 @@ from django.conf import settings
 class Subject(models.Model):
     title = models.CharField(max_length=100, verbose_name='Название предмета')
     notes = models.TextField(blank=True, null=True, verbose_name='Заметки')
-    price = models.IntegerField(blank=True, null=True, verbose_name='Цена')
     colorId = models.IntegerField(blank=True, null=True, verbose_name='ID цвета')
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -21,7 +21,7 @@ class SubjectFilter(django_filters.FilterSet):
         fields = ['title', 'colorId']
 
 class SubjectPagination(LimitOffsetPagination):
-    default_limit = 10
+    default_limit = 20
     max_limit = 100
 
 class SubjectViewSet(viewsets.ModelViewSet):
@@ -31,8 +31,8 @@ class SubjectViewSet(viewsets.ModelViewSet):
     pagination_class = SubjectPagination
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = SubjectFilter
-    ordering_fields = ['title', 'colorId']
-    ordering = ['title']
+    ordering_fields = ['title', 'colorId', 'id']  
+    ordering = ['-id']
 
     def get_queryset(self):
         return Subject.objects.filter(user=self.request.user)
