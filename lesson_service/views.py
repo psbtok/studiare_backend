@@ -87,7 +87,6 @@ class LessonViewSet(viewsets.ModelViewSet):
         student_id = self.request.data.get('student')
         student = get_object_or_404(User, pk=student_id)
         subject_id = self.request.data.get('subject')
-        print(subject_id)
         subject = get_object_or_404(Subject, pk=subject_id)
         serializer.save(tutor=user, student=student, subject=subject)
 
@@ -96,7 +95,6 @@ class LessonViewSet(viewsets.ModelViewSet):
         is_conducted = self.request.data.get('isConducted')
         action = self.request.data.get('action')
 
-        # Перевод занятия в статус проведенного
         if is_conducted and not instance.isConducted and action=='conduct':
             student = instance.student
             tutor = instance.tutor
@@ -124,5 +122,18 @@ class LessonViewSet(viewsets.ModelViewSet):
                     PaymentService.transfer(sender=student, receiver=tutor, amount=compensation)
                 except Exception as e:
                     raise ValidationError(f"Failed to transfer funds: {str(e)}")
-                
-        serializer.save()
+        
+        student = self.request.data.get('student')
+        subject_id = self.request.data.get('subject')
+        
+        if student is not None:
+            student = get_object_or_404(User, pk=student['user']['id'])
+        else:
+            student = instance.student  
+
+        if subject_id is not None:
+            subject = get_object_or_404(Subject, pk=subject_id)
+        else:
+            subject = instance.subject  
+
+        serializer.save(subject=subject, student=student)
