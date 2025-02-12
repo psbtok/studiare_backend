@@ -94,3 +94,4 @@ desktop.ini
 rest-test.http
 # migrations
 localhost*
+db.*
