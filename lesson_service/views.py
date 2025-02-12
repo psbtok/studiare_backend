@@ -45,20 +45,20 @@ class LessonPagination(LimitOffsetPagination):
     max_limit = 100
 
 class LessonFilter(django_filters.FilterSet):
-    date_start_from = django_filters.DateTimeFilter(
-        field_name='date_start', 
+    date_end_from = django_filters.DateTimeFilter(
+        field_name='date_end', 
         lookup_expr='gte', 
         label='Start from date'
     )
-    date_start_to = django_filters.DateTimeFilter(
-        field_name='date_start', 
+    date_end_to = django_filters.DateTimeFilter(
+        field_name='date_end', 
         lookup_expr='lt', 
         label='End at date'
     )
 
     class Meta:
         model = Lesson
-        fields = ['tutor', 'date_start_from', 'date_start_to', 'date_end', 'subject', 'isConfirmed']
+        fields = ['tutor', 'date_end_from', 'date_end_to', 'date_end', 'subject', 'isConfirmed']
 
 class LessonViewSet(viewsets.ModelViewSet):
     serializer_class = LessonSerializer
