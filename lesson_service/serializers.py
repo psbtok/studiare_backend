@@ -50,7 +50,6 @@ class LessonSerializer(serializers.ModelSerializer):
 
         # Create a set of new participants
         new_participants = set(participants_data)
-        print(new_participants, existing_participants)
         # Add new participants that do not exist
         for user_id in new_participants:
             if user_id not in existing_participants:

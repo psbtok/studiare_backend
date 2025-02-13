@@ -98,8 +98,16 @@ class LessonViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         action = self.request.data.get('action')  # Get the action from the request
 
+        subject_id = self.request.data.get('subject')
+        print(subject_id, action)
+        try:
+            subject = get_object_or_404(Subject, pk=subject_id)
+        except:
+            if not action:
+                raise ValidationError("Subject not found.")
+
         if action not in ['cancel', 'confirm', 'conduct']:
-            serializer.save()
+            serializer.save(subject=subject)
             return
 
         user = self.request.user  # Current user making the request
@@ -131,13 +139,11 @@ class LessonViewSet(viewsets.ModelViewSet):
 
         elif action == 'cancel':
             # If the tutor cancels, cancel the lesson for all participants
+            print('hello')
             if instance.tutor == user:
-                print("Tutor is canceling the lesson. Cancelling all participants.")
                 for participant in instance.participants.all():
-                    print(f"Cancelling participant: {participant.user.id} with current status: {participant.status}")
                     participant.status = LessonParticipant.Status.CANCELLED
                     participant.save()
-                print('All participants have been cancelled.')
             else:
                 # If a student cancels, handle late cancellation fees
                 now = timezone.now()
