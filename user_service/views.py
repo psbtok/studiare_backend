@@ -30,16 +30,16 @@ class LoginView(APIView):
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+# class LogoutView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        try:
-            token = Token.objects.get(user=request.user)
-            token.delete()
-            return Response({'message': 'Successfully logged out.'}, status=status.HTTP_200_OK)
-        except Token.DoesNotExist:
-            return Response({'message': 'User is not logged in.'}, status=status.HTTP_400_BAD_REQUEST)
+#     def post(self, request):
+#         try:
+#             token = Token.objects.get(user=request.user)
+#             token.delete()
+#             return Response({'message': 'Successfully logged out.'}, status=status.HTTP_200_OK)
+#         except Token.DoesNotExist:
+#             return Response({'message': 'User is not logged in.'}, status=status.HTTP_400_BAD_REQUEST)
         
 class EditProfileView(APIView):
     permission_classes = [IsAuthenticated]

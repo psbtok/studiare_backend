@@ -1,29 +1,29 @@
 from django.contrib import admin
-from .models import Lesson, Subject  # Import the Subject model
+from .models import Lesson, Subject, LessonParticipant  # Import the LessonParticipant model
+
+class LessonParticipantInline(admin.TabularInline):
+    model = LessonParticipant
+    extra = 1  # Number of empty forms to display
+
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
     list_display = (
         'id', 
         'tutor', 
-        'student', 
         'subject', 
         'date_start', 
         'date_end',
-        'isConfirmed', 
-        'isCancelled', 
-        'isConducted',
-        'price'
+        'price',
     )
-    list_filter = ('isConfirmed', 'isCancelled', 'isConducted', 'date_start', 'subject')
-    search_fields = ('tutor__username', 'student__username', 'subject__title', 'notes')  # Updated to search by subject title
+    list_filter = ('date_start', 'subject')
+    search_fields = ('tutor__username', 'subject__title', 'notes')
 
     fieldsets = (
         (None, {
             'fields': (
                 'tutor', 
-                'student', 
-                'subject', 
+                'subject',
                 'date_start', 
                 'date_end', 
                 'notes',
@@ -31,17 +31,10 @@ class LessonAdmin(admin.ModelAdmin):
             ),
             'description': 'Основная информация о занятии',
         }),
-        ('Статусы', {
-            'fields': (
-                'isConfirmed', 
-                'confirmationTime', 
-                'isCancelled', 
-                'cancellationTime', 
-                'isConducted'
-            ),
-            'description': 'Информация о статусе занятия',
-        }),
     )
+
+    # Inline for LessonParticipant
+    inlines = [LessonParticipantInline]
 
 @admin.register(Subject) 
 class SubjectAdmin(admin.ModelAdmin):
@@ -65,3 +58,22 @@ class SubjectAdmin(admin.ModelAdmin):
             'description': 'Основная информация о предмете',
         }),
     )
+
+# Ensure the LessonParticipant model is registered
+@admin.register(LessonParticipant)
+class LessonParticipantAdmin(admin.ModelAdmin):
+    list_display = ('user', 'lesson', 'status')
+    list_filter = ('status',)
+    search_fields = ('user__username', 'lesson__subject__title')
+
+    fieldsets = (
+        (None, {
+            'fields': (
+                'user', 
+                'lesson', 
+                'status', 
+            ),
+            'description': 'Основная информация об участнике занятия',
+        }),
+    )
+
