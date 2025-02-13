@@ -117,7 +117,6 @@ class LessonViewSet(viewsets.ModelViewSet):
             raise ValidationError("You are not a participant or tutor of this lesson.")
 
         if action == 'confirm' and current_participant:
-            # Update the participant's status to 'confirmed'
             current_participant.status = LessonParticipant.Status.CONFIRMED
             current_participant.save()
 
@@ -126,20 +125,23 @@ class LessonViewSet(viewsets.ModelViewSet):
             if instance.tutor != user:
                 raise ValidationError("Only the tutor can mark the lesson as conducted.")
 
-            # Update the participant's status to 'conducted'
-            current_participant.status = LessonParticipant.Status.CONDUCTED
-            current_participant.save()
-
             # Transfer payment from student to tutor
             for participant in instance.participants.filter(status=LessonParticipant.Status.CONFIRMED):
                 try:
                     PaymentService.transfer(sender=participant.user, receiver=instance.tutor, amount=instance.price)
+                    participant.status = LessonParticipant.Status.CONDUCTED
+                    participant.save()
                 except Exception as e:
                     raise ValidationError(f"Failed to transfer funds: {str(e)}")
+                
+            # Transfer payment from student to tutor
+            for participant in instance.participants.filter(status=LessonParticipant.Status.AWAITING_CONFIRMATION):
+                participant.status = LessonParticipant.Status.CANCELLED
+                participant.save()
+
 
         elif action == 'cancel':
             # If the tutor cancels, cancel the lesson for all participants
-            print('hello')
             if instance.tutor == user:
                 for participant in instance.participants.all():
                     participant.status = LessonParticipant.Status.CANCELLED
@@ -158,5 +160,6 @@ class LessonViewSet(viewsets.ModelViewSet):
                         raise ValidationError(f"Failed to transfer cancellation fee: {str(e)}")
 
                 # Update the participant's status to 'cancelled'
-                current_participant.status = LessonParticipant.Status.CANCELLED
+                if not current_participant.status == LessonParticipant.Status.CONDUCTED:
+                    current_participant.status = LessonParticipant.Status.CANCELLED
                 current_participant.save()
