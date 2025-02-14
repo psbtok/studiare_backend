@@ -168,7 +168,7 @@ class LessonViewSet(viewsets.ModelViewSet):
                     current_participant.status = LessonParticipant.Status.CANCELLED
                 current_participant.save()
 
-class SubjectLessonCountView(APIView):
+class LessonStatisticsBySubjectView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
