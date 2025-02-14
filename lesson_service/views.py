@@ -3,7 +3,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as django_filters
 from .models import Lesson, Subject, LessonParticipant
-from .serializers import LessonSerializer, SubjectSerializer
+from .serializers import *
 from django.shortcuts import get_object_or_404
 from user_service.models import User
 from django.db.models import Q
@@ -11,6 +11,10 @@ from payment_service.services import PaymentService
 from django.core.exceptions import ValidationError  
 from django.utils import timezone
 from datetime import timedelta
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Count
+from rest_framework.views import APIView
 
 class SubjectFilter(django_filters.FilterSet):
     title = django_filters.CharFilter(field_name='title', lookup_expr='icontains')
@@ -163,3 +167,39 @@ class LessonViewSet(viewsets.ModelViewSet):
                 if not current_participant.status == LessonParticipant.Status.CONDUCTED:
                     current_participant.status = LessonParticipant.Status.CANCELLED
                 current_participant.save()
+
+class SubjectLessonCountView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        date_start = request.query_params.get('date_start')
+        date_end = request.query_params.get('date_end')
+        chart_type = request.query_params.get('chart_type', 'subject')
+
+        if not date_start or not date_end:
+            return Response(
+                {"error": "Both date_start and date_end are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if chart_type != 'subject':
+            return Response(
+                {"error": "Only 'subject' chart_type is supported at the moment."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filter lessons within the specified date range
+        lessons = Lesson.objects.filter(
+            date_start__gte=date_start,
+            date_end__lte=date_end,
+            tutor=request.user  # Only count lessons for the authenticated user
+        )
+
+        # Annotate the count of lessons per subject and include subject__colorId
+        subject_lesson_counts = lessons.values('subject__title', 'subject__colorId').annotate(
+            lesson_count=Count('id')
+        ).filter(lesson_count__gt=0)
+
+        # Serialize the data
+        serializer = SubjectLessonCountSerializer(subject_lesson_counts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

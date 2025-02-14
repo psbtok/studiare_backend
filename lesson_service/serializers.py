@@ -65,3 +65,8 @@ class LessonSerializer(serializers.ModelSerializer):
                 existing_participants[user_id].delete()
 
         return instance
+    
+class SubjectLessonCountSerializer(serializers.Serializer):
+    subject = serializers.CharField(source='subject__title')
+    colorId = serializers.CharField(source='subject__colorId')
+    lesson_count = serializers.IntegerField()
