@@ -103,7 +103,6 @@ class LessonViewSet(viewsets.ModelViewSet):
         action = self.request.data.get('action')  # Get the action from the request
 
         subject_id = self.request.data.get('subject')
-        print(subject_id, action)
         try:
             subject = get_object_or_404(Subject, pk=subject_id)
         except:

@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import *
 from django.contrib.auth import authenticate
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,11 +20,10 @@ class TutorSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    tutor = TutorSerializer(read_only=True)  
-
+    tutor = TutorSerializer(read_only=True)
     class Meta:
         model = Profile
-        fields = ['user', 'is_tutor', 'tutor']
+        fields = ['user', 'is_tutor', 'tutor', 'profile_picture']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -34,7 +34,7 @@ class ProfileSerializer(serializers.ModelSerializer):
                 'email': user_data['email'], 
                 'password': user_data['password'],
                 'first_name': user_data.get('first_name', ''),
-                'last_name': user_data.get('last_name', '')
+                'last_name': user_data.get('last_name', ''),
             }
         )
         
@@ -48,29 +48,34 @@ class ProfileSerializer(serializers.ModelSerializer):
 
         profile, created = Profile.objects.get_or_create(user=user)
         profile.is_tutor = validated_data.get('is_tutor', profile.is_tutor)
-
         if profile.is_tutor and not profile.tutor:
             tutor = Tutor.objects.create()
             profile.tutor = tutor
 
+        if 'profile_picture' in validated_data and validated_data['profile_picture'] is not None:
+            profile.profile_picture = validated_data['profile_picture']
         profile.save()
         return profile
-    
+
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', None)
         if user_data:
             user = instance.user
             user.first_name = user_data.get('first_name', user.first_name)
             user.last_name = user_data.get('last_name', user.last_name)
-            if 'password' in user_data:
+            if 'password' in user_data and user_data['password']:
                 user.set_password(user_data['password'])
             user.save()
 
         instance.is_tutor = validated_data.get('is_tutor', instance.is_tutor)
-
         if instance.is_tutor and not instance.tutor:
             tutor = Tutor.objects.create()
             instance.tutor = tutor
+
+        if 'profile_picture' in validated_data:
+            if validated_data['profile_picture'] is not None:
+                print(type(validated_data['profile_picture']))
+                instance.profile_picture = validated_data['profile_picture']
 
         instance.save()
         return instance

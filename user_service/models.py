@@ -35,6 +35,13 @@ class Profile(models.Model):
         null=True
     )
 
+    profile_picture = models.ImageField(
+        upload_to='profile_pictures/', 
+        blank=True, 
+        null=True, 
+        verbose_name='Фото профиля'
+    )
+
     class Meta:
         verbose_name = "Профиль пользователя"
         verbose_name_plural = "Профили пользователей"

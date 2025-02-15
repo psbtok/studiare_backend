@@ -43,41 +43,63 @@ class LoginView(APIView):
         
 class EditProfileView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
-    def post(self, request):
+    def post(self, request):   
+        print(request.data)
         user = request.user
         profile = user.profile  
-
-        # First, validate and save the user data
-        user_serializer = UserSerializer(user, data=request.data.get('user', {}), partial=True)
+        user_data = {
+            'first_name': request.data.get('user[first_name]'),
+            'last_name': request.data.get('user[last_name]'),
+            'email': request.data.get('user[email]'),
+        }
+        
+        user_serializer = UserSerializer(user, data=user_data, partial=True)
         if user_serializer.is_valid():
             user_serializer.save()
         else:
             return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Now validate and save the profile data
-        profile_data = request.data.copy()
-        profile_data['user'] = user_serializer.data  # Ensure the user data is included
+        profile_data = {
+            'user': user_serializer.data,
+            'is_tutor': request.data.get('is_tutor')
+        }
+
+        if not isinstance(request.data.get('profile_picture'), str):
+            profile_data['profile_picture'] = request.data.get('profile_picture')
+        else:
+            pass
 
         profile_serializer = ProfileSerializer(profile, data=profile_data, partial=True)
         if profile_serializer.is_valid():
             profile_serializer.save()
 
-            # If tutor data is included and needs to be updated, we handle that separately
-            tutor_data = request.data.get('tutor', None)
-            if tutor_data:
+            tutor_data = {
+                'id': request.data.get('tutor[id]') or None,
+                'about': request.data.get('tutor[about]') or '',
+                'birth_date': request.data.get('tutor[birth_date]') or None,
+                'education': request.data.get('tutor[education]') or '',
+                'links': request.data.get('tutor[links]') or '',
+                'experienceYears': request.data.get('tutor[experienceYears]') or 0,
+            }
+
+            if tutor_data['birth_date'] == 'null': 
+                tutor_data['birth_date'] = None
+
+            if profile.is_tutor:
                 tutor_serializer = TutorSerializer(profile.tutor, data=tutor_data, partial=True)
                 if tutor_serializer.is_valid():
                     tutor_serializer.save()
                 else:
                     return Response(tutor_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
         else:
             return Response(profile_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({
             'profile': profile_serializer.data
         }, status=status.HTTP_200_OK)
+
     
 class GetProfileByIdView(APIView):
     permission_classes = [IsAuthenticated]

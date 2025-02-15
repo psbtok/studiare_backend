@@ -8,4 +8,7 @@ urlpatterns = [
     path('api/', include('user_service.urls')),
     path('api/', include('lesson_service.urls')),
     path('api/', include('payment_service.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
