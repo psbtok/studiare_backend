@@ -54,6 +54,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
         if 'profile_picture' in validated_data and validated_data['profile_picture'] is not None:
             profile.profile_picture = validated_data['profile_picture']
+        
         profile.save()
         return profile
 
@@ -72,10 +73,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             tutor = Tutor.objects.create()
             instance.tutor = tutor
 
-        if 'profile_picture' in validated_data:
-            if validated_data['profile_picture'] is not None:
-                print(type(validated_data['profile_picture']))
-                instance.profile_picture = validated_data['profile_picture']
+        if 'profile_picture' in validated_data and validated_data['profile_picture'] is not None:
+            instance.profile_picture = validated_data['profile_picture']
 
         instance.save()
         return instance

@@ -9,6 +9,7 @@ class Tutor(models.Model):
     education = models.TextField(blank=True, null=True, verbose_name='Образование')
     links = models.TextField(blank=True, null=True, verbose_name='Ссылки')
     experienceYears = models.PositiveIntegerField(blank=True, null=True, verbose_name='Лет опыта')
+    paymentMethod = models.TextField(blank=True, null=True, verbose_name='Реквизиты')
 
     class Meta:
         verbose_name = 'Репетитор'

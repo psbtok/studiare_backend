@@ -4,7 +4,7 @@ from .models import Profile, Tutor
 
 class TutorAdmin(admin.ModelAdmin):
     list_display = ('id', 'about', 'birth_date', 'experienceYears')  # Поля для отображения в списке
-    search_fields = ('about', 'education', 'links')  # Поля для поиска
+    search_fields = ('about', 'education', 'links', 'paymentMethod')  # Поля для поиска
 
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'get_first_name', 'get_last_name', 'is_tutor', 'get_tutor_info', 'display_profile_picture')  

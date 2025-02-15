@@ -1,3 +1,4 @@
+import os
 from rest_framework import generics
 from .models import Profile
 from .serializers import *
@@ -7,6 +8,9 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import NotFound
+from django.core.files.base import ContentFile
+from PIL import Image
+import io
 
 class CreateProfileView(generics.CreateAPIView):
     queryset = Profile.objects.all()
@@ -45,8 +49,7 @@ class EditProfileView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
 
-    def post(self, request):   
-        print(request.data)
+    def post(self, request):
         user = request.user
         profile = user.profile  
         user_data = {
@@ -66,9 +69,29 @@ class EditProfileView(APIView):
             'is_tutor': request.data.get('is_tutor')
         }
 
-        if not isinstance(request.data.get('profile_picture'), str):
-            profile_data['profile_picture'] = request.data.get('profile_picture')
-        else:
+        try:
+            new_profile_picture = request.data.get('profile_picture')
+            if new_profile_picture:
+                if profile.profile_picture:
+                    if os.path.isfile(profile.profile_picture.path):
+                        with open(profile.profile_picture.path, 'rb') as existing_image_file:
+                            existing_image_content = existing_image_file.read()
+                        
+                        new_image_content = new_profile_picture.read()
+                        if existing_image_content == new_image_content:
+                            return Response({'detail': 'The new profile picture is the same as the existing one.'}, 
+                                            status=status.HTTP_400_BAD_REQUEST)
+
+                    if os.path.isfile(profile.profile_picture.path):
+                        os.remove(profile.profile_picture.path)
+
+                img = Image.open(new_profile_picture)
+                img = img.resize((256, 256), Image.Resampling.LANCZOS)
+                thumb_io = io.BytesIO()
+                img.save(thumb_io, format='JPEG')
+                thumb_file = ContentFile(thumb_io.getvalue(), name=new_profile_picture.name)
+                profile_data['profile_picture'] = thumb_file
+        except:
             pass
 
         profile_serializer = ProfileSerializer(profile, data=profile_data, partial=True)
@@ -82,6 +105,7 @@ class EditProfileView(APIView):
                 'education': request.data.get('tutor[education]') or '',
                 'links': request.data.get('tutor[links]') or '',
                 'experienceYears': request.data.get('tutor[experienceYears]') or 0,
+                'paymentMethod': request.data.get('tutor[paymentMethod]') or '',
             }
 
             if tutor_data['birth_date'] == 'null': 
