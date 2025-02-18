@@ -2,10 +2,12 @@ from rest_framework import viewsets, permissions, filters
 from rest_framework.pagination import LimitOffsetPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as django_filters
+
+from user_service.serializers import TutorSerializer
 from .models import Lesson, Subject, LessonParticipant
 from .serializers import *
 from django.shortcuts import get_object_or_404
-from user_service.models import User
+from user_service.models import Profile, Tutor, User
 from django.db.models import Q
 from payment_service.services import PaymentService  
 from django.core.exceptions import ValidationError  
@@ -202,3 +204,40 @@ class LessonStatisticsBySubjectView(APIView):
         # Serialize the data
         serializer = SubjectLessonCountSerializer(subject_lesson_counts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class UpdateRatingView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        lesson_id = request.data.get('lesson_id')
+        rating = request.data.get('rating')
+
+        if lesson_id is None or rating is None:
+            return Response({'detail': 'Lesson ID and rating are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if rating > 5 or rating < 1:
+            return Response({'detail': 'Rating is supposed to be between 1 and 5.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        lesson_participant = get_object_or_404(LessonParticipant, lesson_id=lesson_id, user=request.user)
+        
+        previous_rating = lesson_participant.rating
+
+        lesson_participant.rating = rating
+        lesson_participant.save()
+
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+        tutor = get_object_or_404(Profile, user=lesson.tutor.id).tutor
+
+        if previous_rating is not None:
+            tutor.totalRating += (rating - previous_rating)
+        else:
+            tutor.totalRating += rating
+            tutor.peopleReacted += 1
+        
+        tutor.save()
+
+        tutor_serializer = TutorSerializer(tutor, partial=True)
+
+        return Response({
+            'tutor': tutor_serializer.data 
+        }, status=status.HTTP_200_OK)

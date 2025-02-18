@@ -15,7 +15,7 @@ class LessonParticipantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LessonParticipant
-        fields = ['profile', 'status', 'updated_at']
+        fields = ['profile', 'status', 'updated_at', 'rating']
 
 class LessonSerializer(serializers.ModelSerializer):
     tutor = ProfileSerializer(source='tutor.profile', read_only=True)  
@@ -42,15 +42,11 @@ class LessonSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         participants_data = self.context['request'].data.get('participants', [])
 
-        # Update the lesson instance with other validated data
         instance = super().update(instance, validated_data)
 
-        # Get existing participants for comparison
         existing_participants = {p.user_id: p for p in instance.participants.all()}
 
-        # Create a set of new participants
         new_participants = set(participants_data)
-        # Add new participants that do not exist
         for user_id in new_participants:
             if user_id not in existing_participants:
                 LessonParticipant.objects.create(
@@ -59,7 +55,6 @@ class LessonSerializer(serializers.ModelSerializer):
                     status=LessonParticipant.Status.AWAITING_CONFIRMATION
                 )
 
-        # Remove participants that are no longer in the new participants list
         for user_id in existing_participants:
             if user_id not in new_participants:
                 existing_participants[user_id].delete()

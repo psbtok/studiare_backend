@@ -23,7 +23,7 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            token, created = Token.objects.get_or_create(user=user)
+            token, _ = Token.objects.get_or_create(user=user)
 
             profile = user.profile 
             profile_serializer = ProfileSerializer(profile)
@@ -32,18 +32,8 @@ class LoginView(APIView):
                 'token': token.key,
                 'profile': profile_serializer.data
             }, status=status.HTTP_200_OK)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-# class LogoutView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request):
-#         try:
-#             token = Token.objects.get(user=request.user)
-#             token.delete()
-#             return Response({'message': 'Successfully logged out.'}, status=status.HTTP_200_OK)
-#         except Token.DoesNotExist:
-#             return Response({'message': 'User is not logged in.'}, status=status.HTTP_400_BAD_REQUEST)
         
 class EditProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -52,77 +42,91 @@ class EditProfileView(APIView):
     def post(self, request):
         user = request.user
         profile = user.profile  
-        user_data = {
-            'first_name': request.data.get('user[first_name]'),
-            'last_name': request.data.get('user[last_name]'),
-            'email': request.data.get('user[email]'),
-        }
+
+        if not self.update_user(user, request.data):
+            return Response({'detail': 'Error updating user.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        profile_picture = request.data.get('profile_picture')
         
+        if profile_picture:
+            if not self.handle_profile_picture(profile, profile_picture):
+                return Response({'detail': 'Error processing profile picture.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not self.update_is_tutor(profile, request.data):
+            return Response({'detail': 'Error updating profile.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not self.update_tutor(profile, request.data):
+            return Response({'detail': 'Error updating tutor information.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'profile': ProfileSerializer(profile).data}, status=status.HTTP_200_OK)
+
+    def update_user(self, user, data):
+        user_data = {
+            'first_name': data.get('user[first_name]'),
+            'last_name': data.get('user[last_name]'),
+            'email': data.get('user[email]')
+        }
         user_serializer = UserSerializer(user, data=user_data, partial=True)
         if user_serializer.is_valid():
             user_serializer.save()
-        else:
-            return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return True
+        return False
 
-        profile_data = {
-            'user': user_serializer.data,
-            'is_tutor': request.data.get('is_tutor')
-        }
-
+    def handle_profile_picture(self, profile, new_profile_picture):
         try:
-            new_profile_picture = request.data.get('profile_picture')
-            if new_profile_picture:
-                if profile.profile_picture:
-                    if os.path.isfile(profile.profile_picture.path):
-                        with open(profile.profile_picture.path, 'rb') as existing_image_file:
-                            existing_image_content = existing_image_file.read()
-                        
-                        new_image_content = new_profile_picture.read()
-                        if existing_image_content == new_image_content:
-                            return Response({'detail': 'The new profile picture is the same as the existing one.'}, 
-                                            status=status.HTTP_400_BAD_REQUEST)
+            if profile.profile_picture:
+                self.delete_existing_picture(profile.profile_picture.path)
 
-                    if os.path.isfile(profile.profile_picture.path):
-                        os.remove(profile.profile_picture.path)
+            img = Image.open(new_profile_picture)
+            img = img.resize((368, 368), Image.Resampling.LANCZOS)
+            thumb_io = io.BytesIO()
+            img.save(thumb_io, format='JPEG')
+            thumb_file = ContentFile(thumb_io.getvalue(), name=new_profile_picture.name)
+            profile.profile_picture.save(thumb_file.name, thumb_file)
+            return True
+        except Exception as e:
+            return False
 
-                img = Image.open(new_profile_picture)
-                img = img.resize((256, 256), Image.Resampling.LANCZOS)
-                thumb_io = io.BytesIO()
-                img.save(thumb_io, format='JPEG')
-                thumb_file = ContentFile(thumb_io.getvalue(), name=new_profile_picture.name)
-                profile_data['profile_picture'] = thumb_file
-        except:
-            pass
+    def delete_existing_picture(self, path):
+        if os.path.isfile(path):
+            os.remove(path)
 
+    def update_is_tutor(self, profile, data):
+        profile_data = {
+            'is_tutor': data.get('is_tutor'),
+        }
         profile_serializer = ProfileSerializer(profile, data=profile_data, partial=True)
         if profile_serializer.is_valid():
             profile_serializer.save()
+            return True
+        return False
 
-            tutor_data = {
-                'id': request.data.get('tutor[id]') or None,
-                'about': request.data.get('tutor[about]') or '',
-                'birth_date': request.data.get('tutor[birth_date]') or None,
-                'education': request.data.get('tutor[education]') or '',
-                'links': request.data.get('tutor[links]') or '',
-                'experienceYears': request.data.get('tutor[experienceYears]') or 0,
-                'paymentMethod': request.data.get('tutor[paymentMethod]') or '',
-            }
+    def update_tutor(self, profile, data):
+        if not profile.is_tutor:
+            return True  
 
-            if tutor_data['birth_date'] == 'null': 
-                tutor_data['birth_date'] = None
+        tutor_data = {
+            'id': data.get('tutor[id]'),
+            'about': data.get('tutor[about]', None),
+            'birth_date': data.get('tutor[birth_date]') or None,
+            'education': data.get('tutor[education]', None),
+            'links': data.get('tutor[links]', None),
+            'experienceYears': data.get('tutor[experienceYears]', None),
+            'paymentMethod': data.get('tutor[paymentMethod]', None),
+            'totalRating': profile.tutor.totalRating,
+            'peopleReacted': profile.tutor.peopleReacted,
+        }
 
-            if profile.is_tutor:
-                tutor_serializer = TutorSerializer(profile.tutor, data=tutor_data, partial=True)
-                if tutor_serializer.is_valid():
-                    tutor_serializer.save()
-                else:
-                    return Response(tutor_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response(profile_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        for key in tutor_data:
+            if tutor_data[key] == 'null':
+                tutor_data[key] = None
+                
+        tutor_serializer = TutorSerializer(profile.tutor, data=tutor_data, partial=True)
+        if tutor_serializer.is_valid():
+            tutor_serializer.save()
+            return True
+        return False
 
-        return Response({
-            'profile': profile_serializer.data
-        }, status=status.HTTP_200_OK)
 
     
 class GetProfileByIdView(APIView):
@@ -155,11 +159,12 @@ class GetUsersByFullNameView(APIView):
         if len(name_parts) != 2:
             return Response({'detail': 'Please provide both first and last name.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        first_name, last_name = name_parts
-        users = User.objects.filter(first_name__iexact=first_name, last_name__iexact=last_name)
+        first_name, last_name = map(str.capitalize, name_parts)
+
+        users = User.objects.filter(first_name__icontains=first_name, last_name__icontains=last_name)
 
         if not users.exists():
-            users = User.objects.filter(first_name__iexact=last_name, last_name__iexact=first_name)
+            users = User.objects.filter(first_name__icontains=last_name, last_name__icontains=first_name)
 
         if not users.exists():
             raise NotFound(detail="No users found with that name.")

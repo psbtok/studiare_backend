@@ -28,6 +28,8 @@ class LessonParticipant(models.Model):
     )
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Время обновления статуса')
 
+    rating = models.IntegerField(blank=True, null=True, verbose_name="Оценка занятия")
+
     class Meta:
         unique_together = ('user', 'lesson')  
         verbose_name = 'Участник занятия'

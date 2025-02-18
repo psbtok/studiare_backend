@@ -41,19 +41,8 @@ class ProfileSerializer(serializers.ModelSerializer):
         if created:
             user.set_password(user_data['password'])
             user.save()
-        else:
-            user.first_name = user_data.get('first_name', user.first_name)
-            user.last_name = user_data.get('last_name', user.last_name)
-            user.save()
 
-        profile, created = Profile.objects.get_or_create(user=user)
-        profile.is_tutor = validated_data.get('is_tutor', profile.is_tutor)
-        if profile.is_tutor and not profile.tutor:
-            tutor = Tutor.objects.create()
-            profile.tutor = tutor
-
-        if 'profile_picture' in validated_data and validated_data['profile_picture'] is not None:
-            profile.profile_picture = validated_data['profile_picture']
+        profile, created = Profile.objects.get_or_create(user=user)        
         
         profile.save()
         return profile

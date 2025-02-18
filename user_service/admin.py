@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from .models import Profile, Tutor
 
 class TutorAdmin(admin.ModelAdmin):
-    list_display = ('id', 'about', 'birth_date', 'experienceYears')  # Поля для отображения в списке
+    list_display = ('id', 'about', 'birth_date', 'experienceYears', 'totalRating', 'peopleReacted')  # Поля для отображения в списке
     search_fields = ('about', 'education', 'links', 'paymentMethod')  # Поля для поиска
 
 class ProfileAdmin(admin.ModelAdmin):
