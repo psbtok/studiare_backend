@@ -228,11 +228,12 @@ class UpdateRatingView(APIView):
         lesson = get_object_or_404(Lesson, id=lesson_id)
         tutor = get_object_or_404(Profile, user=lesson.tutor.id).tutor
 
-        if previous_rating is not None:
+        if isinstance(tutor.totalRating, int) and isinstance(tutor.peopleReacted, int):
             tutor.totalRating += (rating - previous_rating)
-        else:
-            tutor.totalRating += rating
             tutor.peopleReacted += 1
+        else:
+            tutor.totalRating = rating
+            tutor.peopleReacted = 1
         
         tutor.save()
 
